@@ -135,12 +135,33 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="includes\imgui\imgui.cpp" />
+    <ClCompile Include="includes\imgui\imgui_demo.cpp" />
+    <ClCompile Include="includes\imgui\imgui_draw.cpp" />
+    <ClCompile Include="includes\imgui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="includes\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="includes\imgui\imgui_tables.cpp" />
+    <ClCompile Include="includes\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\main.cpp">
       <TreatWChar_tAsBuiltInType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWChar_tAsBuiltInType>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="includes\imgui\imconfig.h" />
+    <ClInclude Include="includes\imgui\imgui.h" />
+    <ClInclude Include="includes\imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="includes\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="includes\imgui\imgui_internal.h" />
+    <ClInclude Include="includes\imgui\imstb_rectpack.h" />
+    <ClInclude Include="includes\imgui\imstb_textedit.h" />
+    <ClInclude Include="includes\imgui\imstb_truetype.h" />
     <ClInclude Include="memory.h" />
+    <ClInclude Include="src\memory.h" />
+    <ClInclude Include="src\player.h" />
+    <ClInclude Include="src\ref_def.h" />
+    <ClInclude Include="src\timer.h" />
+    <ClInclude Include="src\vector.h" />
+    <ClInclude Include="src\view_matrix.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="vector.h" />
   </ItemGroup>
