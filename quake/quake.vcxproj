@@ -145,6 +145,8 @@
     <ClCompile Include="src\main.cpp">
       <TreatWChar_tAsBuiltInType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWChar_tAsBuiltInType>
     </ClCompile>
+    <ClCompile Include="src\ql_hack.cpp" />
+    <ClCompile Include="src\vector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\imgui\imconfig.h" />
@@ -157,7 +159,9 @@
     <ClInclude Include="includes\imgui\imstb_truetype.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="src\memory.h" />
+    <ClInclude Include="src\offset.h" />
     <ClInclude Include="src\player.h" />
+    <ClInclude Include="src\ql_hack.h" />
     <ClInclude Include="src\ref_def.h" />
     <ClInclude Include="src\timer.h" />
     <ClInclude Include="src\vector.h" />
