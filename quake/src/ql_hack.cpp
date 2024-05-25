@@ -1,9 +1,10 @@
 #include "ql_hack.h"
 #include <iostream>
+#include <random>
 
-int QLHack::GetClosestToCrosshair(std::vector<Vector3> angles, Vector3 viewAnglesVec) {
+std::pair<int, double> QLHack::GetClosestToCrosshair(std::vector<Vector3> angles, Vector3 viewAnglesVec) const {
 	if (angles.size() == 0) {
-		return false;
+		return {};
 	}
 
 	int shortestPathIndex = -1;
@@ -19,7 +20,7 @@ int QLHack::GetClosestToCrosshair(std::vector<Vector3> angles, Vector3 viewAngle
 		count++;
 	}
 
-	return shortestPathIndex;
+	return { shortestPathIndex, shortestDistance };
 }
 
 std::vector<Vector3> QLHack::GetEnemiesPosition() const {
@@ -33,7 +34,6 @@ std::vector<Vector3> QLHack::GetEnemiesPosition() const {
 	while (true && enemyPlayersNum > 0) {
 		const auto playerAddress = playerList + enemyPlayersRead * 0xBD8;
 		const auto isEnemy = memory.Read<int>(playerAddress + offset::team) != playerTeam;
-
 
 		const auto enemyPlayerPosX = memory.Read<float>(playerAddress + offset::entityX);
 		const auto enemyPlayerPosY = memory.Read<float>(playerAddress + offset::entityY);
@@ -70,16 +70,26 @@ void QLHack::GetEnemyPlayers() {
 	}
 
 	if (angles.size() > 0) {
-		const auto closestEnemyIndex = QLHack::GetClosestToCrosshair(angles, viewAnglesVec);
-		if (closestEnemyIndex != -1) {
-			auto& closestEnemyPosition = positions[closestEnemyIndex];
+		const auto indexDistancePair = QLHack::GetClosestToCrosshair(angles, viewAnglesVec);
+		if (indexDistancePair.first != -1) {
+			auto& closestEnemyPosition = positions[indexDistancePair.first];
 			const auto enemyScreenPosition = closestEnemyPosition.WorldToScreen(QLHack::GetRefDef());
 			QLHack::MoveMouse(enemyScreenPosition.x, enemyScreenPosition.y);
+
+			if (indexDistancePair.second < 4) {
+				QLHack::MouseClick();
+				QLHack::railGunTimer.reset();
+			}
 		}
 	}
 }
 
-void QLHack::MoveMouse(int dx, int dy) {
+void QLHack::MoveMouse(int dx, int dy) const {
+	std::random_device dev;
+	std::mt19937 rng(dev());
+	std::uniform_int_distribution<std::mt19937::result_type> deltaDistribution(0, 1); // distribution in range [1, 6]
+
+	const float delta = deltaDistribution(rng);
 	// Get the current mouse position
 	POINT currentPos;
 	if (GetCursorPos(&currentPos)) {
@@ -87,13 +97,43 @@ void QLHack::MoveMouse(int dx, int dy) {
 		INPUT input = { 0 };
 		input.type = INPUT_MOUSE;
 		input.mi.dwFlags = MOUSEEVENTF_MOVE; // Use relative movement
-		input.mi.dx = (dx - currentPos.x) / smoothing; // Relative movement in the x direction
-		input.mi.dy = (dy - currentPos.y) / smoothing; // Relative movement in the y direction
+		input.mi.dx = ((dx - currentPos.x) / smoothing) + (2.f - delta); // Relative movement in the x direction
+		input.mi.dy = ((dy - currentPos.y) / smoothing) + (2.f - delta); // Relative movement in the y direction
 
+		input.mi.dx = QLHack::ClampMouseRelativeMovement(currentPos.x, input.mi.dx, 1920);
+		input.mi.dy = QLHack::ClampMouseRelativeMovement(currentPos.y, input.mi.dy, 1080);
 		// Send the event
 		SendInput(1, &input, sizeof(INPUT));
 	}
 	else {
 		std::cerr << "Failed to get the current cursor position." << std::endl;
 	}
+}
+
+void QLHack::MouseClick() const {
+	// Create an array of INPUT structures to hold the event information
+	INPUT inputs[2] = {};
+
+	// Set up the first INPUT structure for the mouse down event
+	inputs[0].type = INPUT_MOUSE;
+	inputs[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+
+	// Set up the second INPUT structure for the mouse up event
+	inputs[1].type = INPUT_MOUSE;
+	inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
+
+	// Send the events
+	SendInput(2, inputs, sizeof(INPUT));
+}
+
+float QLHack::ClampMouseRelativeMovement(float currentPos, float relativePos, float upperBounds) const {
+	if (currentPos + relativePos > upperBounds) {
+		return (currentPos + relativePos) - upperBounds;
+	}
+
+	else if (currentPos + relativePos < 1) {
+		return 1;
+	}
+
+	return relativePos;
 }

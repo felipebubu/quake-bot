@@ -7,6 +7,7 @@
 #include "memory.h"
 #include "offset.h"
 #include "ref_def.h"
+#include "timer.h"
 
 class QLHack
 {
@@ -18,16 +19,23 @@ public:
 	uintptr_t cgamex86;
 	uintptr_t qagamex86;
 	uintptr_t quake;
+	bool wallhack;
+	bool aimbot;
+	Timer railGunTimer;
 	float smoothing;
 	float fov;
 
-	QLHack(float smoothing, float fov) noexcept
+	QLHack(bool wallhack, bool aimbot, float smoothing, float fov) noexcept
 		: memory("quakelive_steam.exe"),
 		cgamex86(memory.GetModuleAddress("cgamex86.dll")),
 		qagamex86(memory.GetModuleAddress("qagamex86.dll")),
 		quake(memory.GetModuleAddress("quakelive_steam.exe")),
+		wallhack(wallhack),
+		aimbot(aimbot),
+		railGunTimer(Timer{}),
 		smoothing(smoothing),
-		fov(fov) {
+		fov(fov)
+	{
 	}
 
 	Vector3 CalculateAngle(
@@ -43,11 +51,15 @@ public:
 		return memory.Read<pRefDef>(cgamex86 + offset::dwRefDef);
 	}
 
-	int GetClosestToCrosshair(std::vector<Vector3> angles, Vector3 viewAnglesVec);
+	std::pair<int, double> GetClosestToCrosshair(std::vector<Vector3> angles, Vector3 viewAnglesVec) const;
 
 	std::vector<Vector3> GetEnemiesPosition() const;
 
 	void GetEnemyPlayers();
 
-	void MoveMouse(int dx, int dy);
+	void MoveMouse(int dx, int dy) const;
+
+	void MouseClick() const;
+
+	float ClampMouseRelativeMovement(float currentPos, float relativePos, float upperBounds) const;
 };

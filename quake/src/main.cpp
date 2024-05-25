@@ -14,6 +14,7 @@
 #include "vector.h"
 #include <thread>
 #include "ql_hack.h"
+#include <random>
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -28,6 +29,34 @@ LRESULT CALLBACK windowProcedure(HWND window, UINT message, WPARAM wParam, LPARA
 	}
 
 	return DefWindowProc(window, message, wParam, lParam);
+}
+
+static int endProcess(IDXGISwapChain*& swapChain, ID3D11DeviceContext*& deviceContext, ID3D11Device*& device, ID3D11RenderTargetView*& renderTargetView, HWND window,
+	LPCWSTR lpszClassName, HINSTANCE hInstance) {
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+
+	ImGui::DestroyContext();
+
+	if (swapChain) {
+		swapChain->Release();
+	}
+
+	if (deviceContext) {
+		deviceContext->Release();
+	}
+
+	if (device) {
+		device->Release();
+	}
+
+	if (renderTargetView) {
+		renderTargetView->Release();
+	}
+
+	DestroyWindow(window);
+	UnregisterClassW(lpszClassName, hInstance);
+	return 1;
 }
 
 INT APIENTRY WinMain(HINSTANCE instance, HINSTANCE, PSTR, INT cmdShow) {
@@ -135,7 +164,7 @@ INT APIENTRY WinMain(HINSTANCE instance, HINSTANCE, PSTR, INT cmdShow) {
 	ImGui_ImplWin32_Init(window);
 	ImGui_ImplDX11_Init(device, deviceContext);
 
-	auto qlHack = QLHack{ 3, 20 };
+	auto qlHack = QLHack{ true, true, 8, 20 };
 
 	auto railGunTimer = Timer{};
 
@@ -162,18 +191,22 @@ INT APIENTRY WinMain(HINSTANCE instance, HINSTANCE, PSTR, INT cmdShow) {
 
 		ImGui::NewFrame();
 
-
-		//const auto viewMatrix = memory.Read<ViewMatrix>(0x1E67514);
-		const auto positions = qlHack.GetEnemiesPosition();
-		for (Vector3 position : positions) {
-			const auto screenCoords = position.WorldToScreen(qlHack.GetRefDef());
-			ImGui::GetBackgroundDrawList()->AddRect({ screenCoords.x - 10.f, screenCoords.y - 10.f },
-				{ screenCoords.x + 20.f, screenCoords.y + 50.f }, ImColor(1.f, 0.f, 0.f));
+		if (qlHack.wallhack) {
+			const auto positions = qlHack.GetEnemiesPosition();
+			for (Vector3 position : positions) {
+				const auto screenCoords = position.WorldToScreen(qlHack.GetRefDef());
+				ImGui::GetBackgroundDrawList()->AddRect({ screenCoords.x - 10.f, screenCoords.y - 10.f },
+					{ screenCoords.x + 20.f, screenCoords.y + 50.f }, ImColor(1.f, 0.f, 0.f));
+			}
 		}
+
 		ImGui::Render();
 
 		constexpr float color[4]{ 0.f, 0.f, 0.f, 0.f };
 		deviceContext->OMSetRenderTargets(1U, &renderTargetView, nullptr);
+		if (renderTargetView == 0) {
+			endProcess(swapChain, deviceContext, device, renderTargetView, window, wc.lpszClassName, wc.hInstance);
+		}
 		deviceContext->ClearRenderTargetView(renderTargetView, color);
 
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -181,43 +214,13 @@ INT APIENTRY WinMain(HINSTANCE instance, HINSTANCE, PSTR, INT cmdShow) {
 		swapChain->Present(1U, 0U);
 
 		//game loop
-		if (GetAsyncKeyState(VK_LBUTTON)) {
-			//std::thread aimbotThread(getEnemyPlayers, std::ref(memory), cgamex86, qagamex86, quake, 3003);
-//			aimbotThread.join();
-			qlHack.GetEnemyPlayers();
+		if (GetAsyncKeyState(VK_XBUTTON2) && qlHack.aimbot) {
+			if (qlHack.railGunTimer.elapsed() > 0.3) {
+				qlHack.GetEnemyPlayers();
+			}
+
 		}
-
-		//while (GetAsyncKeyState(VK_XBUTTON1) && railGunTimer.elapsed() > 1.2f) {
-		//	auto railGunShootingTimer = Timer{};
-		//	while (railGunShootingTimer.elapsed() < 0.05) {
-		//		getEnemyPlayers();
-		//	}
-		//	railGunTimer.reset();
-		//}
-	}
-	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-
-	ImGui::DestroyContext();
-
-	if (swapChain) {
-		swapChain->Release();
 	}
 
-	if (deviceContext) {
-		deviceContext->Release();
-	}
-
-	if (device) {
-		device->Release();
-	}
-
-	if (renderTargetView) {
-		renderTargetView->Release();
-	}
-
-	DestroyWindow(window);
-	UnregisterClassW(wc.lpszClassName, wc.hInstance);
-	return 1;
+	return endProcess(swapChain, deviceContext, device, renderTargetView, window, wc.lpszClassName, wc.hInstance);
 }
-
