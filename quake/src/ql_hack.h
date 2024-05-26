@@ -8,6 +8,7 @@
 #include "offset.h"
 #include "ref_def.h"
 #include "timer.h"
+#include "entity.h"
 
 class QLHack
 {
@@ -62,4 +63,6 @@ public:
 	void MouseClick() const;
 
 	float ClampMouseRelativeMovement(float currentPos, float relativePos, float upperBounds) const;
+
+	std::vector<Entity> GetEnemyEntities() const;
 };

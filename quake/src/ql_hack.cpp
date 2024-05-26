@@ -1,6 +1,7 @@
 #include "ql_hack.h"
 #include <iostream>
 #include <random>
+#include "snap.h"
 
 std::pair<int, double> QLHack::GetClosestToCrosshair(std::vector<Vector3> angles, Vector3 viewAnglesVec) const {
 	if (angles.size() == 0) {
@@ -31,21 +32,31 @@ std::vector<Vector3> QLHack::GetEnemiesPosition() const {
 	const auto playerList = qagamex86 + offset::dwPlayerList;
 	auto enemyPlayersRead = 0;
 	std::vector<Vector3> enemiesPosition;
-	while (true && enemyPlayersNum > 0) {
+	/*while (true && enemyPlayersNum > 0) {
 		const auto playerAddress = playerList + enemyPlayersRead * 0xBD8;
 		const auto isEnemy = memory.Read<int>(playerAddress + offset::team) != playerTeam;
 
-		const auto enemyPlayerPosX = memory.Read<float>(playerAddress + offset::entityX);
+		const auto enemyPlayerPosX = memory.Read<float>(playerAddress + offset::);
 		const auto enemyPlayerPosY = memory.Read<float>(playerAddress + offset::entityY);
 		const auto enemyPlayerPosZ = memory.Read<float>(playerAddress + offset::entityZ);
 
-		enemiesPosition.push_back(Vector3{ enemyPlayerPosX, enemyPlayerPosY, enemyPlayerPosZ });
+		const auto enemyPos = Vector3{ enemyPlayerPosX, enemyPlayerPosY, enemyPlayerPosZ };
+		if (!(enemyPos.x == 0 && enemyPos.y == 0 && enemyPos.z == 0)) {
+			enemiesPosition.push_back(Vector3{ enemyPlayerPosX, enemyPlayerPosY, enemyPlayerPosZ });
+		}
 		if (enemiesPosition.size() == enemyPlayersNum || enemyPlayersRead > 32) {
 			break;
 		}
+		enemyPlayersRead++;
+	}*/
+
+	const auto entities = QLHack::GetEnemyEntities();
+	auto positions = std::vector<Vector3>{};
+	for (const Entity entity : entities) {
+		positions.push_back(Vector3{ entity.posX, entity.posY, entity.posZ });
 	}
 
-	return enemiesPosition;
+	return positions;
 }
 
 void QLHack::GetEnemyPlayers() {
@@ -136,4 +147,21 @@ float QLHack::ClampMouseRelativeMovement(float currentPos, float relativePos, fl
 	}
 
 	return relativePos;
+}
+
+std::vector<Entity> QLHack::GetEnemyEntities() const {
+	//	const auto dwEntities = memory.Read<uintptr_t>(cgamex86 + offset::entities + 0x2D0);
+	auto entities = std::vector<Entity>{};
+	const auto dwSnap = memory.Read<uintptr_t>(cgamex86 + offset::snap);
+	const auto numEntities = memory.Read<uintptr_t>(dwSnap + 0x27C);
+	for (int i = 0; i < numEntities; i++) {
+		const auto dwEntityIndex = memory.Read<uintptr_t>(dwSnap + (i * 0xEC) + 0x280);
+		const auto dwEntity = cgamex86 + offset::entities + 0x2d0 * dwEntityIndex;
+		const auto entity = memory.Read<Entity>(dwEntity);
+		if (entity.type == 1) {
+			entities.push_back(entity);
+		}
+	}
+
+	return entities;
 }

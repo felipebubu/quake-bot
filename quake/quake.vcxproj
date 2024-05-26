@@ -163,6 +163,7 @@
     <ClInclude Include="src\player.h" />
     <ClInclude Include="src\ql_hack.h" />
     <ClInclude Include="src\ref_def.h" />
+    <ClInclude Include="src\snap.h" />
     <ClInclude Include="src\timer.h" />
     <ClInclude Include="src\vector.h" />
     <ClInclude Include="src\view_matrix.h" />

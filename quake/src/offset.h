@@ -7,6 +7,11 @@ namespace offset
 	constexpr ::std::ptrdiff_t yaw = 0xA4;
 	constexpr ::std::ptrdiff_t pitch = 0xA0;
 	constexpr ::std::ptrdiff_t dwRefDef = 0xA9C820;
+	constexpr ::std::ptrdiff_t snap = 0xA6F8C4;
+	constexpr ::std::ptrdiff_t entities = 0xABBAC0;
+	constexpr ::std::ptrdiff_t posX = 0x18;
+	constexpr ::std::ptrdiff_t posY = 0x1C;
+	constexpr ::std::ptrdiff_t posZ = 0x20;
 
 	//quakelive.exe
 	constexpr ::std::ptrdiff_t yawSum = 0x1072754;
